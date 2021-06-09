@@ -167,6 +167,12 @@ public struct NetworkInterface {
 
             switch response.statusCode {
             case 200:
+                if let _ = json["warning"] as? String,
+                   let metaData = json["response_metadata"] as? [String: Any],
+                   let wargingTexts = metaData["warnings"] as? [String] {
+                    print(wargingTexts.joined(separator: "\n"))
+                }
+
                 if json["ok"] as? Bool == true {
                     return json
                 } else {
