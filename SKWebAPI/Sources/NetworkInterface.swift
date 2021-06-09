@@ -47,6 +47,7 @@ public struct NetworkInterface {
 
     internal func request(
         _ endpoint: Endpoint,
+        token: String?,
         parameters: [String: Any?],
         successClosure: @escaping ([String: Any]) -> Void,
         errorClosure: @escaping (SlackError) -> Void
@@ -55,7 +56,10 @@ public struct NetworkInterface {
             errorClosure(SlackError.clientNetworkError)
             return
         }
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
+        if let token = token {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
         session.dataTask(with: request) {(data, response, publicError) in
             do {
@@ -67,11 +71,14 @@ public struct NetworkInterface {
     }
 
     //Adapted from https://gist.github.com/erica/baa8a187a5b4796dab27
-    internal func synchronusRequest(_ endpoint: Endpoint, parameters: [String: Any?]) -> [String: Any]? {
+    internal func synchronusRequest(_ endpoint: Endpoint, token: String?, parameters: [String: Any?]) -> [String: Any]? {
         guard let url = requestURL(for: endpoint, parameters: parameters) else {
             return nil
         }
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
+        if let token = token {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         var data: Data? = nil
         var response: URLResponse? = nil
         var error: Error? = nil
@@ -89,6 +96,7 @@ public struct NetworkInterface {
 
     internal func customRequest(
         _ url: String,
+        token: String?,
         data: Data,
         success: @escaping (Bool) -> Void,
         errorClosure: @escaping (SlackError) -> Void
@@ -101,6 +109,9 @@ public struct NetworkInterface {
         request.httpMethod = "POST"
         let contentType = "application/json"
         request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        if let token = token {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = data
 
         session.dataTask(with: request) {(_, _, publicError) in
@@ -114,6 +125,7 @@ public struct NetworkInterface {
 
     internal func uploadRequest(
         data: Data,
+        token: String?,
         parameters: [String: Any?],
         successClosure: @escaping ([String: Any]) -> Void, errorClosure: @escaping (SlackError) -> Void
     ) {
@@ -130,6 +142,9 @@ public struct NetworkInterface {
         let boundaryConstant = randomBoundary()
         let contentType = "multipart/form-data; boundary=" + boundaryConstant
         request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        if let token = token {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = requestBodyData(data: data, boundaryConstant: boundaryConstant, filename: filename, filetype: filetype)
 
         session.dataTask(with: request) {(data, response, publicError) in
